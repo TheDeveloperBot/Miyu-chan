@@ -1,0 +1,107 @@
+const commando = require('discord.js-commando');
+const ytdl = require('ytdl-core');
+const streamOptions = { seek: 0, volume: 1 };
+const YouTube = require('simple-youtube-api');
+const youtube = new YouTube('AIzaSyAQECMe3RTeRcpwzKYDhA3QcoTeAYa0AtY');
+var soundcloudr = require('soundcloudr');
+soundcloudr.setClientId('69b6a6bc4f7d483fd21b170137a9cd51');
+
+var map = [];
+
+module.exports = class ChannelCommand extends commando.Command {
+	
+	constructor(client) {
+		super(client, {
+			name: 'play',
+			aliases: ['search'],
+			group: 'music',
+			memberName: 'play',
+			description: 'Play/Search music from yt/sound cloud/etc...',
+			examples: ['play https://youtube.com/watch?v=...', 'search poka sowe', 'play 2'],
+			guildOnly: true,
+
+			args: [
+				{
+					key: 'title',
+					label: 'title',
+					prompt: 'Could you please tell me link to music or phrase to search?',
+					type: 'string'
+				}
+			]
+		});
+	}
+
+	async run(msg, args) {
+		const voiceChannel = msg.member.voiceChannel;
+		if (map[msg.author.id]) {
+			if (map[msg.author.id][parseInt(args.title)-1]) {
+				const track = map[msg.author.id][parseInt(args.title)-1];
+				msg.reply(`Playing **${track.title}** as requested by ${msg.author.username}`);
+						voiceChannel.join()
+						 .then(connection => {
+						   const stream = ytdl('https://www.youtube.com/watch?v='+track.id, { filter : 'audioonly' });
+						   const dispatcher = connection.playStream(stream, streamOptions);
+						 })
+						 .catch(console.error);
+				delete map[msg.author.id];
+				return;
+			}
+			else {
+				return msg.reply(`You must choose between 1-${results.length}`);
+			}
+		}
+		if (voiceChannel && voiceChannel.type === 'voice') {
+			if (args.title.startsWith("https://www.youtube.com")) {
+				if (args.title.contains("playlist=")) {
+					
+				}
+				else {
+					yt.getInfo(args.title, (err, info) => {
+						if(err) return msg.reply('Invalid YouTube Link: ' + err);
+						msg.reply(`Playing **${info.title}** as requested by ${msg.author.username}`);
+						voiceChannel.join()
+						 .then(connection => {
+						   const stream = ytdl(args.title, { filter : 'audioonly' });
+						   const dispatcher = connection.playStream(stream, streamOptions);
+						 })
+						 .catch(console.error);
+					});
+				}
+			}
+			else if (args.title.startsWith("https://soundcloud.com/")) {
+				//msg.reply(`Playing **${info.title}** as requested by ${msg.author.username}`); TODO
+
+					voiceChannel.join()
+					 .then(connection => {
+						const stream = soundcloudr.getStreamUrl('cyka-1/cyka-1', function(err, url) {
+							if (err) {
+								console.log(err.message);
+								//bot.sendMessage(message.channel, "An error occured: " + err.message);
+							} else {
+								dispatcher = connection.playStream(stream, streamOptions);
+							}
+						});
+					 })
+					 .catch(console.error);
+				//https://soundcloud.com/cyka-1/cyka-1
+			}
+			else {
+				youtube.searchVideos(args.title, 5)
+				.then(results => {
+					msg.reply(`Choose one of ;play 1-${results.length} videos`);
+					var i = 0;
+					results.forEach(function(result) {
+						console.log(result);
+						msg.channel.sendMessage((i+1)+". "+results[i].title);
+						i++;
+					});
+					map[msg.author.id] = results;
+				})
+				.catch(console.log);
+			}
+		}
+		else {
+			msg.reply('You need to be in voice channel first!');
+		}
+	}
+};
