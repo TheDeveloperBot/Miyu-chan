@@ -27,8 +27,5 @@ module.exports = class ChannelCommand extends commando.Command {
 		talkbot.write(args.ddd, function (response) {
 			return msg.channel.sendMessage(response.message);
 		});
-		/*bot.ask(args.ddd, function (err, response) {
-			return message.channel.sendMessage(response);
-		});*/
-	}
+
 };
